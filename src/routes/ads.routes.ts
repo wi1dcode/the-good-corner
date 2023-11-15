@@ -1,62 +1,72 @@
-import { Request, Response, Router } from "express";
-import { Ad } from "../types/ads";
-import { ads } from "../data";
+import { Router, Request, Response } from "express";
+import { Ad, AdCreateInput } from "../types/ads";
+import AdServices from "../services/ads.services";
 const router = Router();
 
-router.post("/create", function (req: Request, res: Response) {
-  const data: Ad = req.body;
-  const isAlreadyInData: boolean = ads.some((ad) => ad.id === data.id);
-  if (isAlreadyInData) {
-    throw new Error("Cette annonce existe déjà");
+router.post("/create", async function (req: Request, res: Response) {
+  const {
+
+    description,
+    location,
+    createdAt,
+    owner,
+    picture,
+    price,
+    title,
+  }: AdCreateInput = req.body;
+
+  try {
+   
+    const result: Ad[] = await new AdServices().create({
+      description,
+      location,
+      createdAt,
+      owner,
+      picture,
+      price,
+      title,
+    });
+    console.log("RESULT", result);
+    res.send(result);
+  } catch (err: any) {
+    res.send({ message: err.message, success: false });
   }
-  ads.push(data); 
-  res.send(ads);
 });
 
-router.get("/list", function (req, res) {
-  res.send(ads);
+router.get("/list", async function (req: Request, res: Response) {
+  const result = await new AdServices().list();
+  res.send(result);
 });
-router.get("/find/:id", function (req, res) {
+
+router.get("/find/:id", function (req: Request, res: Response) {
   const id = +req.params.id;
-  const ad = ads.find((item) => item.id === id);
-  if (!ad) {
-    return res
-      .status(404)
-      .send({ message: "L'annonce n'existe pas", success: false });
+  try {
+    const ad = new AdServices().find(id);
+    res.send(ad);
+  } catch (err: any) {
+    res.send({ message: err.message, success: false });
   }
-  res.send(ad);
 });
 
-router.patch("/update/:id", function (req, res) {
+router.patch("/update/:id", function (req: Request, res: Response) {
   const id = +req.params.id;
-  const data: Ad = req.body;
-
-  if (!data) {
-    return res
-      .status(400)
-      .send({ message: "Vérifiez vos informations", success: false });
-  }
-  const updateIndex = ads.findIndex((item) => item.id === id);
-  if (updateIndex === -1) {
-    return res
-      .status(404)
-      .send({ message: "L'annonce n'existe pas", success: false });
-  } else {
-    ads[updateIndex] = { ...ads[updateIndex], ...data };
-
-    res.send(ads[updateIndex]);
+  const data: Partial<Ad> = req.body;
+  //! prévoir que on envoi pas tout le data, mais que on envoi que les clés qui ont été renseignées
+  try {
+    const ad = new AdServices().update(id, data);
+    res.send(ad);
+  } catch (err: any) {
+    res.send({ message: err.message, success: false });
   }
 });
-router.delete("/delete/:id", (req, res) => {
+router.delete("/delete/:id", function (req: Request, res: Response) {
   const id = +req.params.id;
-
-  const index = ads.findIndex((ad) => ad.id === id);
-  if (index === -1) {
-    return res.status(404).send("not found");
+  try {
+    const ads = new AdServices().delete(id);
+    res.send(ads);
+  } catch (err: any) {
+    res.send({ message: err.message, success: false });
   }
-  ads.splice(index, 1);
-  res.send(ads);
 });
-
 
 export default router;
