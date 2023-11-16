@@ -3,6 +3,9 @@ import { categories } from "../data";
 import { Category } from "../types/categories";
 const router = Router();
 
+/**======================
+ *?    création des routes ici
+ *========================**/
 
 router.post("/create", function (req: Request, res: Response) {
   const { id, name }: Category = req.body;
